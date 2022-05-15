@@ -63,6 +63,13 @@ async function run() {
          * app.patch('/booking/:id)
          * app.delete('/booking/:id') */
 
+        app.get('/booking', async (req, res) => {
+            const patient = req.query.patient;
+            const query = { patient: patient }
+            const bookings = await bookingCollection.find(query).toArray();
+            res.send(bookings)
+        });
+
         app.post('/booking', async (req, res) => {
             const booking = req.body;
             const query = { treatment: booking.treatment, data: booking.data, patient: booking.patient }
@@ -70,8 +77,9 @@ async function run() {
             if (exists) {
                 return res.send({ success: false, booking: exists })
             }
-            const result = await bookingCollection.insertOne(booking)
-            return res.send(result)
+            const result = await bookingCollection.insertOne(booking);
+
+            return res.send({ success: true, result });
         })
     }
     finally {
