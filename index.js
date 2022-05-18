@@ -3,6 +3,9 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion } = require('mongodb');
+// var nodemailer = require('nodemailer');
+// var sgTransport = require('nodemailer-sendgrid-transport');
+
 const app = express()
 const port = process.env.PORT || 5000;
 
@@ -29,6 +32,43 @@ function verifyJWT(req, res, next) {
         next();
     });
 }
+
+// const emailSenderOptions = {
+//     auth: {
+//         api_key: process.env.EMAIL_SENDER_KEY
+//     }
+// }
+// const emailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
+// function sendAppointmentEmail(booking) {
+//     const { patient, patientName, treatment, date, slot } = booking;
+
+//     var email = {
+//         from: process.env.EMAIL_SENDER,
+//         to: patient,
+//         subject: `Your Appointment for ${treatment} is confirmed`,
+//         text: `Your Appointment for ${treatment} is confirmed`,
+//         html: `
+//         <div>
+//         <p>Hello ${patientName},</p>
+//         <h3>Your appoinment ${treatment} is confirmed</h3>
+//         <p>Loking forward to seeying you you on ${date} as ${slot}</p>
+//         <h3>Our address</h3>
+//         <p>andor killa bandorban</p>
+//         <p>bangledesh</p>
+//         <a href="https://web.programming-hero.com/">unsubcribe</a>
+//         </div>`
+//     };
+
+//     emailClient.sendMail(email, function (err, info) {
+//         if (err) {
+//             console.log(err);
+//         }
+//         else {
+//             console.log('Message sent: ', info);
+//         }
+//     });
+// }
+
 
 async function run() {
     try {
@@ -152,18 +192,26 @@ async function run() {
                 return res.send({ success: false, booking: exists })
             }
             const result = await bookingCollection.insertOne(booking);
-
+            // console.log('sender email push');
+            // sendAppointmentEmail(booking)
             return res.send({ success: true, result });
         });
 
-        app.get('/doctor',verifyJWT,verifyAdmin,async(req,res)=>{
-            const doctors =await doctorCollection.find().toArray()
+        app.get('/doctor', verifyJWT, verifyAdmin, async (req, res) => {
+            const doctors = await doctorCollection.find().toArray()
             res.send(doctors)
         })
 
         app.post('/doctor', verifyJWT, verifyAdmin, async (req, res) => {
             const doctor = req.body;
             const result = await doctorCollection.insertOne(doctor)
+            res.send(result)
+        });
+
+        app.delete('/doctor/:email', verifyJWT, verifyAdmin, async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email }
+            const result = await doctorCollection.deleteOne(filter)
             res.send(result)
         })
     }
