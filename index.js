@@ -4,8 +4,9 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-// var nodemailer = require('nodemailer');
-// var sgTransport = require('nodemailer-sendgrid-transport');
+var nodemailer = require('nodemailer');
+const mg = require('nodemailer-mailgun-transport');
+
 
 const app = express()
 const port = process.env.PORT || 5000;
@@ -34,41 +35,44 @@ function verifyJWT(req, res, next) {
     });
 }
 
-// const emailSenderOptions = {
-//     auth: {
-//         api_key: process.env.EMAIL_SENDER_KEY
-//     }
-// }
-// const emailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
-// function sendAppointmentEmail(booking) {
-//     const { patient, patientName, treatment, date, slot } = booking;
+const auth = {
+    auth: {
+      api_key: 'a41307125cf9c837c5f89072f29ae304-8d821f0c-fd07801b',
+      domain: 'sandboxb793713b86ee48ae9a96fe4dfedc45bc.mailgun.org'
+    }
+  }
 
-//     var email = {
-//         from: process.env.EMAIL_SENDER,
-//         to: patient,
-//         subject: `Your Appointment for ${treatment} is confirmed`,
-//         text: `Your Appointment for ${treatment} is confirmed`,
-//         html: `
-//         <div>
-//         <p>Hello ${patientName},</p>
-//         <h3>Your appoinment ${treatment} is confirmed</h3>
-//         <p>Loking forward to seeying you you on ${date} as ${slot}</p>
-//         <h3>Our address</h3>
-//         <p>andor killa bandorban</p>
-//         <p>bangledesh</p>
-//         <a href="https://web.programming-hero.com/">unsubcribe</a>
-//         </div>`
-//     };
+const nodemailerMailgun = nodemailer.createTransport(mg(auth));
 
-//     emailClient.sendMail(email, function (err, info) {
-//         if (err) {
-//             console.log(err);
-//         }
-//         else {
-//             console.log('Message sent: ', info);
-//         }
-//     });
-// }
+function sendAppointmentEmail(booking) {
+    const { patient, patientName, treatment, date, slot } = booking;
+
+    var email = {
+        from: "support@test.com",
+        to: patient,
+        subject: `Your Appointment for ${treatment} is confirmed`,
+        text: `Your Appointment for ${treatment} is confirmed`,
+        html: `
+        <div>
+        <p>Hello ${patientName},</p>
+        <h3>Your appoinment ${treatment} is confirmed</h3>
+        <p>Loking forward to seeying you you on ${date} as ${slot}</p>
+        <h3>Our address</h3>
+        <p>andor killa bandorban</p>
+        <p>bangledesh</p>
+        <a href="https://web.programming-hero.com/">unsubcribe</a>
+        </div>`
+    };
+
+    nodemailerMailgun.sendMail(email, (err, info) => {
+        if (err) {
+          console.log(err);
+        }
+        else {
+          console.log(info);
+        }
+      });
+}
 
 
 async function run() {
@@ -214,7 +218,7 @@ async function run() {
             }
             const result = await bookingCollection.insertOne(booking);
             // console.log('sender email push');
-            // sendAppointmentEmail(booking)
+            sendAppointmentEmail(booking)
             return res.send({ success: true, result });
         });
 
@@ -261,6 +265,13 @@ run().catch(console.dir)
 app.get('/', (req, res) => {
     res.send('Hello from doctor portal!')
 })
+
+// for testing purpost
+// app.post('/email',async(req,res)=>{
+//     const booking =req.body;
+//     sendAppointmentEmail(booking)
+//     res.send({status:true})
+// })
 
 app.listen(port, () => {
     console.log(`Doctors app listening on port ${port}`)
